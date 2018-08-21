@@ -46,6 +46,12 @@
     <maven.version>3.3.9</maven.version>
   </properties>
 
+  <scm>
+    <url>https://github.com/salesforce/proto-backwards-compat-maven-plugin</url>
+    <connection>scm:git:git@github.com:salesforce/proto-backwards-compat-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:salesforce/proto-backwards-compat-maven-plugin.git</developerConnection>
+  </scm>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
