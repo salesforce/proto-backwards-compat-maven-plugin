@@ -36,7 +36,7 @@ must be added to your project's pom.xml file in order for this plugin to work.
         <plugin>
             <groupId>com.salesforce.servicelibs</groupId>
             <artifactId>proto-backwards-compatibility</artifactId>
-            <version>1.0.0</version>
+            <version>${proto-backwards-compatibility.version}</version>
             <configuration>
                 <!-- Optional alternative protos location -->
                 <protoSourceRoot>src/main/proto</protoSourceRoot>
