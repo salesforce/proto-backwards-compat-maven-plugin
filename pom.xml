@@ -15,6 +15,7 @@
   <version>1.0.1</version>
 
   <name>Proto Backwards Compatibility Maven Mojo</name>
+  <description>A Maven plugin for analyzing protobuf backwards compatible changes.</description>
   <url>https://github.com/salesforce/proto-backwards-compat-maven-plugin</url>
 
   <licenses>
