@@ -161,6 +161,7 @@ public class BackwardsCompatibilityCheckMojoTest
         if (testFile.exists()) {
             testFile.delete();
         }
+        testFile.getParentFile().mkdirs();
         testFile.createNewFile();
         File protoFile = getTestFile(testDir + "testProtos/" + filename);
         try (InputStream is = new FileInputStream(protoFile);
