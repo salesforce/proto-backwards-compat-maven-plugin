@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin.svg?branch=master)](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/rxgrpc/proto-backwards-compatibility.svg)](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/proto-backwards-compatibility)
+
 # Protobuf Backwards Compatibility Check Maven Plugin
 
 The <code>proto-backwards-compatibility</code> plugin is a Maven plugin to
