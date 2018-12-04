@@ -136,14 +136,16 @@ public class BackwardsCompatibilityCheckMojoTest
         myMojo = (BackwardsCompatibilityCheckMojo) lookupMojo("backwards-compatibility-check", pom);
         assertNotNull(myMojo);
         Model m = new Model();
-        String os = System.getProperty("os.name").toLowerCase();
-        if ((os.indexOf("mac") >= 0)) {
-            os = "osx";
-        } else if (os.indexOf("nux") >= 0) {
-            os = "linux";
+        String classifier = System.getProperty("os.name").toLowerCase();
+        if ((classifier.contains("mac"))) {
+            classifier = "osx-x86_64";
+        } else if (classifier.contains("nux")) {
+            classifier = "linux-x86_64";
+        } else if (classifier.contains("windows")) {
+            classifier = "windows-x86_64";
         }
 
-        m.addProperty("os.detected.name", os);
+        m.addProperty("os.detected.classifier", classifier);
         Build b = new Build();
         b.setDirectory(System.getProperty("user.dir") + testDir);
         m.setBuild(b);
@@ -206,7 +208,14 @@ public class BackwardsCompatibilityCheckMojoTest
      * Check that the protolock executable exists.
      */
     private void checkExecutableExists() {
-        File exeFile = getTestFile(testDir + "protolock-bin/protolock");
+        String os = System.getProperty("os.name").toLowerCase();
+
+        String protolockExtension = "";
+        if (os.contains("windows")) {
+            protolockExtension = ".exe";
+        }
+
+        File exeFile = getTestFile(testDir + "protolock-bin/protolock" + protolockExtension);
         assertTrue(exeFile.exists());
     }
 }

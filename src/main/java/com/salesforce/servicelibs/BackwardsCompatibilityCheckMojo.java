@@ -9,11 +9,15 @@ package com.salesforce.servicelibs;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermissions;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -34,7 +38,7 @@ public class BackwardsCompatibilityCheckMojo
     /**
      * The directory where .proto source files can be found.
      */
-    @Parameter(defaultValue = "src/main/proto")
+    @Parameter(defaultValue = "${basedir}/src/main/proto")
     private String protoSourceRoot;
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
@@ -46,34 +50,52 @@ public class BackwardsCompatibilityCheckMojo
      * @throws MojoFailureException thrown when compatibility check fails.
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        // Copy protolock executable locally
-        String exeDirPath = mavenProject.getBuild().getDirectory() + "/protolock-bin";
-        String exePath = exeDirPath + "/protolock";
-        File exeDir = new File(exeDirPath);
-        if (!exeDir.exists()) {
-            exeDir.mkdir();
-            final String os = mavenProject.getProperties().getProperty("os.detected.name");
-            if (os == null) {
-                getLog().error("Add os-maven-plugin to your POM. https://github.com/trustin/os-maven-plugin");
-                throw new MojoExecutionException("Unable to detect OS type.");
-            } else if (!os.equals("osx") && !os.equals("linux")) {
-                throw new MojoExecutionException("OS not supported.");
-            }
+        final String classifier = mavenProject.getProperties().getProperty("os.detected.classifier");
+        if (classifier == null) {
+            getLog().error("Add os-maven-plugin to your POM. https://github.com/trustin/os-maven-plugin");
+            throw new MojoExecutionException("Unable to detect OS type.");
+        }
 
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream(os + "/protolock");
-                    OutputStream out = new FileOutputStream(exePath)) {
-                File exeFile = new File(exePath);
-                write(in, out);
-                exeFile.setExecutable(true, false);
+        // Copy protolock executable locally if needed
+        Path exeDirPath = Paths.get(mavenProject.getBuild().getDirectory(), "protolock-bin");
+        if (!Files.isDirectory(exeDirPath)) {
+            try {
+                Files.createDirectory(exeDirPath);
             } catch (IOException e) {
-                throw new MojoExecutionException(e.toString());
+                throw new MojoExecutionException("Unable to create the protolock binary directory", e);
+            }
+        }
+
+        String exeExtension = "";
+        if (classifier.startsWith("windows")) {
+            exeExtension = ".exe";
+        }
+
+        Path exePath = exeDirPath.resolve("protolock" + exeExtension);
+        if (!Files.exists(exePath)) {
+            String protolockResourcePath = classifier + "/protolock" + exeExtension;
+
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream(protolockResourcePath)) {
+                if (in == null) {
+                    throw new MojoExecutionException(
+                            "OS not supported. Unable to find a protolock binary for the classifier " + classifier);
+                }
+
+                Files.copy(in, exePath);
+
+                PosixFileAttributeView attributes = Files.getFileAttributeView(exePath, PosixFileAttributeView.class);
+                if (attributes != null) {
+                    attributes.setPermissions(PosixFilePermissions.fromString("rwxrwxr-x"));
+                }
+            } catch (IOException e) {
+                throw new MojoExecutionException("Unable to write the protolock binary", e);
             }
         }
 
         // Run protolock
         try {
-            File lockFile = new File(protoSourceRoot + "/proto.lock");
-            if (!lockFile.exists()) {
+            Path lockFile = Paths.get(protoSourceRoot, "proto.lock");
+            if (!Files.exists(lockFile)) {
                 Runtime.getRuntime().exec(exePath + " init", null, new File(protoSourceRoot)).waitFor();
                 getLog().info("Initialized protolock.");
             } else {
@@ -93,18 +115,7 @@ public class BackwardsCompatibilityCheckMojo
                 }
             }
         } catch (IOException | InterruptedException e) {
-            throw new MojoExecutionException(e.toString());
-        }
-    }
-
-    private void write(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[1024];
-        while (true) {
-            int bytesRead = in.read(buffer);
-            if (bytesRead == -1) {
-                break;
-            }
-            out.write(buffer, 0, bytesRead);
+            throw new MojoExecutionException("An error occurred while running protolock", e);
         }
     }
 }
