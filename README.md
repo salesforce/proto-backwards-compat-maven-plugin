@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin.svg?branch=master)](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin) 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/proto-backwards-compatibility/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/proto-backwards-compatibility)
 
+Protolock Version: [20190327T205335Z](https://github.com/nilslice/protolock/releases/tag/v0.12.0)
+
 # Protobuf Backwards Compatibility Check Maven Plugin
 
 The <code>proto-backwards-compatibility</code> plugin is a Maven plugin to
