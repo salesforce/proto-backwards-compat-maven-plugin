@@ -66,7 +66,10 @@ public class PluginMojoTest
     public void testProtolockPlugin()
         throws Exception {
         writeTestFile("init.proto");
+        // Init
         runMojo(false);
+        // Verify - should fail because demo plugin returns errors
+        runMojo(true);
     }
 
     /**

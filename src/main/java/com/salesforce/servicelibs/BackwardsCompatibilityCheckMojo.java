@@ -20,8 +20,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -42,6 +44,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.shared.utils.Os;
+import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.shared.utils.io.FileUtils;
 
 @Mojo(
@@ -147,22 +150,46 @@ public class BackwardsCompatibilityCheckMojo
         }
 
         // Resolve protolock plugins
+        List<String> pluginFileNames = new ArrayList<>();
         if (plugins != null) {
             for (String pluginSpec : plugins) {
-                Artifact plugin = createDependencyArtifact(pluginSpec);
-                resolveBinaryArtifact(plugin);
+                if (pluginSpec.contains(":")) {
+                    // A maven spec
+                    Artifact plugin = createDependencyArtifact(pluginSpec);
+                    File pluginFile = resolveBinaryArtifact(plugin);
+                    pluginFileNames.add(pluginFile.getName());
+                } else {
+                    // Not a maven spec
+                    pluginFileNames.add(pluginSpec);
+                }
             }
         }
+
+        String pathEnv = "PATH=" + System.getenv("PATH");
+        if (plugins != null && !plugins.isEmpty()) {
+            if (classifier.startsWith("windows")) {
+                pathEnv += ";";
+            } else {
+                pathEnv += ":";
+            }
+            pathEnv += protolockPluginDirectory.getAbsolutePath();
+        }
+
+        String pluginsOption = "";
+        if (!pluginFileNames.isEmpty()) {
+            pluginsOption = " --plugins=" + StringUtils.join(pluginFileNames.toArray(), ",");
+        }
+
 
         // Run protolock
         try {
             Path lockFile = Paths.get(protoSourceRoot, "proto.lock");
             if (!Files.exists(lockFile)) {
-                Runtime.getRuntime().exec(exePath + " init", null, new File(protoSourceRoot)).waitFor();
+                Runtime.getRuntime().exec(exePath + " init", new String[]{pathEnv}, new File(protoSourceRoot)).waitFor();
                 getLog().info("Initialized protolock.");
             } else {
                 Process protolock =
-                    Runtime.getRuntime().exec(exePath + " status", null, new File(protoSourceRoot));
+                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption, new String[]{pathEnv}, new File(protoSourceRoot));
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolock.getInputStream()));
                 String s;
                 while ((s = stdInput.readLine()) != null) {
@@ -172,7 +199,7 @@ public class BackwardsCompatibilityCheckMojo
                 if (protolock.waitFor() != 0) {
                     throw new MojoFailureException("Backwards compatibility check failed!");
                 } else {
-                    Runtime.getRuntime().exec(exePath + " commit", null, new File(protoSourceRoot));
+                    Runtime.getRuntime().exec(exePath + " commit", new String[]{pathEnv}, new File(protoSourceRoot));
                     getLog().info("Backwards compatibility check passed.");
                 }
             }
