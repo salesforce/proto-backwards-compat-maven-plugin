@@ -31,7 +31,7 @@
                     <protoSourceRoot>src/test/resources/unit/proto</protoSourceRoot>
                     <protolockPluginDirectory>${project.build.directory}../../../../../../../target/protolock-plugins</protolockPluginDirectory>
                     <plugins>
-                        <plugin>com.salesforce.servicelibs:protolock-lint:0.1.0-SNAPSHOT:exe:osx-x86_64</plugin>
+                        <plugin>com.salesforce.servicelibs:sample-plugin:0.1.0-SNAPSHOT:exe:osx-x86_64</plugin>
                     </plugins>
                 </configuration>
                 <executions>

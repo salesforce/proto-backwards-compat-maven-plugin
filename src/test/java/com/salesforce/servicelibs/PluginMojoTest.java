@@ -22,6 +22,7 @@ import org.junit.Test;
 
 /**
  * Tests the backwards compatibility check mojo.
+ * This test is disabled because it requires a go toolchain to install the sample plugin.
  */
 @Ignore
 public class PluginMojoTest

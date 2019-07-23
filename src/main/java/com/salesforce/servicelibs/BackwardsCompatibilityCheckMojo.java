@@ -185,11 +185,13 @@ public class BackwardsCompatibilityCheckMojo
         try {
             Path lockFile = Paths.get(protoSourceRoot, "proto.lock");
             if (!Files.exists(lockFile)) {
-                Runtime.getRuntime().exec(exePath + " init", new String[]{pathEnv}, new File(protoSourceRoot)).waitFor();
+                Runtime.getRuntime().exec(exePath + " init", new String[]{pathEnv},
+                        new File(protoSourceRoot)).waitFor();
                 getLog().info("Initialized protolock.");
             } else {
                 Process protolock =
-                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption, new String[]{pathEnv}, new File(protoSourceRoot));
+                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption, new String[]{pathEnv},
+                            new File(protoSourceRoot));
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolock.getInputStream()));
                 String s;
                 while ((s = stdInput.readLine()) != null) {
@@ -199,7 +201,8 @@ public class BackwardsCompatibilityCheckMojo
                 if (protolock.waitFor() != 0) {
                     throw new MojoFailureException("Backwards compatibility check failed!");
                 } else {
-                    Runtime.getRuntime().exec(exePath + " commit", new String[]{pathEnv}, new File(protoSourceRoot));
+                    Runtime.getRuntime().exec(exePath + " commit", new String[]{pathEnv},
+                            new File(protoSourceRoot));
                     getLog().info("Backwards compatibility check passed.");
                 }
             }
