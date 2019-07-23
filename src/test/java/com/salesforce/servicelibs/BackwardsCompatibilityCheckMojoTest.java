@@ -17,7 +17,6 @@ import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.junit.Test;
 
@@ -25,7 +24,7 @@ import org.junit.Test;
  * Tests the backwards compatibility check mojo.
  */
 public class BackwardsCompatibilityCheckMojoTest
-    extends AbstractMojoTestCase {
+    extends BetterAbstractMojoTestCase {
 
     final String testDir = "/src/test/resources/unit/";
     BackwardsCompatibilityCheckMojo myMojo;
@@ -134,7 +133,7 @@ public class BackwardsCompatibilityCheckMojoTest
         File pom = getTestFile(testDir + "project-to-test/pom.xml");
         assertNotNull(pom);
         assertTrue(pom.exists());
-        myMojo = (BackwardsCompatibilityCheckMojo) lookupMojo("backwards-compatibility-check", pom);
+        myMojo = (BackwardsCompatibilityCheckMojo) lookupConfiguredMojo(pom, "backwards-compatibility-check");
         assertNotNull(myMojo);
         Model m = new Model();
         String classifier = System.getProperty("os.name").toLowerCase();
