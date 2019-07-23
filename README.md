@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin.svg?branch=master)](https://travis-ci.org/salesforce/proto-backwards-compat-maven-plugin) 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/proto-backwards-compatibility/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.salesforce.servicelibs/proto-backwards-compatibility)
 
-Protolock Version: [20190327T205335Z](https://github.com/nilslice/protolock/releases/tag/v0.12.0)
+Protolock Version: [20190714T165210Z](https://github.com/nilslice/protolock/releases/tag/v0.14.0)
 
 # Protobuf Backwards Compatibility Check Maven Plugin
 
@@ -56,6 +56,22 @@ must be added to your project's pom.xml file in order for this plugin to work.
         </plugin>
     </plugins>
 </build>
+```
+
+## Plugins
+Protolock has [plugin support](https://github.com/nilslice/protolock/wiki/Plugins), to allow
+for new rules to be enforced. Protolock plugins are referenced by adding the following
+additional configuration to your pom.xml.
+
+```xml
+<configuration>
+    <plugins>
+        <!-- Plugin executable distributed by Maven -->
+        <plugin>com.salesforce.servicelibs:sample-plugin:0.1.0-SNAPSHOT:exe:osx-x86_64</plugin>
+        <!-- Plugin executable found on the system path -->
+        <plugin>sample-plugin</plugin>
+    </plugins>
+</configuration>
 ```
 
 ## Acknowledgements
