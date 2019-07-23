@@ -12,18 +12,20 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Tests the backwards compatibility check mojo.
+ * This test is disabled because it requires a go toolchain to install the sample plugin.
  */
-public class BackwardsCompatibilityCheckMojoTest
+@Ignore
+public class PluginMojoTest
     extends BetterAbstractMojoTestCase {
 
     final String testDir = "/src/test/resources/unit/";
@@ -62,67 +64,13 @@ public class BackwardsCompatibilityCheckMojoTest
      * @throws Exception if any.
      */
     @Test
-    public void testProtolockInit()
+    public void testProtolockPlugin()
         throws Exception {
         writeTestFile("init.proto");
-        myMojo.execute();
-        checkLockFileExists();
-        checkExecutableExists();
-    }
-
-    /**
-     * Tests that backwards compatibility check fails when breaking change is made.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldFailCompatibilityCheckBreakingChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        writeTestFile("bad.proto");
-        runMojo(true);
-    }
-
-    /**
-     * Tests that backwards compatibility check fails when .proto file is deleted.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldFailCompatibilityCheckProtoFileDeleted()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        File testFile = getTestFile(testDir + "proto/test.proto");
-        testFile.delete();
-        runMojo(true);
-    }
-
-    /**
-     * Tests that backwards compatibility check passes when breaking change is forced.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldPassCompatibilityCheckForceChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        writeTestFile("bad.proto");
-        File lockFile = getTestFile(testDir + "proto/proto.lock");
-        lockFile.delete();
+        // Init
         runMojo(false);
-    }
-
-    /**
-     * Tests that backwards compatibility check passes when non-breaking change is made.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldPassCompatibilityCheckNonBreakingChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        writeTestFile("good.proto");
-        runMojo(false);
+        // Verify - should fail because demo plugin returns errors
+        runMojo(true);
     }
 
     /**
@@ -130,12 +78,12 @@ public class BackwardsCompatibilityCheckMojoTest
      */
     private void setupMojo()
         throws Exception {
-        File pom = getTestFile(testDir + "project-to-test/pom.xml");
+        File pom = getTestFile(testDir + "project-to-test/pom-with-plugin.xml");
         assertNotNull(pom);
         assertTrue(pom.exists());
         myMojo = (BackwardsCompatibilityCheckMojo) lookupConfiguredMojo(pom, "backwards-compatibility-check");
         assertNotNull(myMojo);
-        Model m = new Model();
+
         String classifier = System.getProperty("os.name").toLowerCase();
         if ((classifier.contains("mac"))) {
             classifier = "osx-x86_64";
@@ -145,11 +93,17 @@ public class BackwardsCompatibilityCheckMojoTest
             classifier = "windows-x86_64";
         }
 
+        Model m = new Model();
         m.addProperty("os.detected.classifier", classifier);
         Build b = new Build();
         b.setDirectory(System.getProperty("user.dir") + testDir);
         m.setBuild(b);
         myMojo.project = new MavenProject(m);
+        myMojo.project.setArtifact(myMojo.repositorySystem.createArtifact("com.salesforce.servicelibs.unit",
+                "project-to-test", "1.0-SNAPSHOT", "pom"));
+
+        myMojo.session = newMavenSession();
+        myMojo.localRepository = myMojo.session.getLocalRepository();
     }
 
     /**
@@ -194,28 +148,5 @@ public class BackwardsCompatibilityCheckMojoTest
                 fail();
             }
         }
-    }
-
-    /**
-     * Check that the proto.lock file exists.
-     */
-    private void checkLockFileExists() {
-        File lockFile = getTestFile(testDir + "proto/proto.lock");
-        assertTrue(lockFile.exists());
-    }
-
-    /**
-     * Check that the protolock executable exists.
-     */
-    private void checkExecutableExists() {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        String protolockExtension = "";
-        if (os.contains("windows")) {
-            protolockExtension = ".exe";
-        }
-
-        File exeFile = getTestFile(testDir + "protolock-bin/protolock" + protolockExtension);
-        assertTrue(exeFile.exists());
     }
 }
