@@ -23,7 +23,7 @@ import org.junit.Test;
 /**
  * Tests the backwards compatibility check mojo.
  */
-public class BackwardsCompatibilityCheckMojoTest
+public class BasicMojoTest
     extends BetterAbstractMojoTestCase {
 
     final String testDir = "/src/test/resources/unit/";
