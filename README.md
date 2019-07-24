@@ -23,7 +23,7 @@ In order to maintain backwards compatibility for your set of .proto files, a few
 rules must be followed when making updates. Please refer here to avoid breaking changes:
 https://developers.google.com/protocol-buffers/docs/proto#backwards-compatibility
 
-## Configuration
+## Usage
 
 The <code>os-maven-plugin</code> extension (https://github.com/trustin/os-maven-plugin) 
 must be added to your project's pom.xml file in order for this plugin to work.
@@ -56,6 +56,20 @@ must be added to your project's pom.xml file in order for this plugin to work.
         </plugin>
     </plugins>
 </build>
+```
+
+## Configuration
+
+* `<protoSourceRoot>` (`${basedir}/src/main/proto`) - The directory where proto sources can be found.
+* `<options>` (empty) - Additional [command line options](https://github.com/nilslice/protolock#usage) to pass to protolock.
+
+```xml
+<configuration>
+    <plugins>
+        <protoSourceRoot>src/main/proto</protoSourceRoot>
+        <options>--ignore=target/</options>
+    </plugins>
+</configuration>
 ```
 
 ## Plugins

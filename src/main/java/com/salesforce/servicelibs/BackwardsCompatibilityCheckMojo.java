@@ -68,6 +68,12 @@ public class BackwardsCompatibilityCheckMojo
     private List<String> plugins;
 
     /**
+     * Additional options to pass to protolock, using command line format. See protolock documentation for details.
+     */
+    @Parameter(property = "options", required = false)
+    private String options;
+
+    /**
      * A directory where native protolock plugins will be stored.
      */
     @Parameter(required = false, defaultValue = "${project.build.directory}/protolock-plugins")
@@ -183,14 +189,20 @@ public class BackwardsCompatibilityCheckMojo
 
         // Run protolock
         try {
+            if (options != null && !StringUtils.isEmpty(options)) {
+                options = " " + options.trim();
+            } else {
+                options = "";
+            }
+
             Path lockFile = Paths.get(protoSourceRoot, "proto.lock");
             if (!Files.exists(lockFile)) {
-                Runtime.getRuntime().exec(exePath + " init", new String[]{pathEnv},
+                Runtime.getRuntime().exec(exePath + " init" + options, new String[]{pathEnv},
                         new File(protoSourceRoot)).waitFor();
                 getLog().info("Initialized protolock.");
             } else {
                 Process protolock =
-                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption, new String[]{pathEnv},
+                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption + options, new String[]{pathEnv},
                             new File(protoSourceRoot));
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolock.getInputStream()));
                 String s;
@@ -201,7 +213,7 @@ public class BackwardsCompatibilityCheckMojo
                 if (protolock.waitFor() != 0) {
                     throw new MojoFailureException("Backwards compatibility check failed!");
                 } else {
-                    Runtime.getRuntime().exec(exePath + " commit", new String[]{pathEnv},
+                    Runtime.getRuntime().exec(exePath + " commit" + options, new String[]{pathEnv},
                             new File(protoSourceRoot));
                     getLog().info("Backwards compatibility check passed.");
                 }
