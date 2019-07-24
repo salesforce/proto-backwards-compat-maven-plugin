@@ -67,7 +67,7 @@ additional configuration to your pom.xml.
 <configuration>
     <plugins>
         <!-- Plugin executable distributed by Maven -->
-        <plugin>com.salesforce.servicelibs:sample-plugin:0.1.0-SNAPSHOT:exe:osx-x86_64</plugin>
+        <plugin>com.salesforce.servicelibs:sample-plugin:0.1.0-SNAPSHOT:${os.detected.classifier}</plugin>
         <!-- Plugin executable found on the system path -->
         <plugin>sample-plugin</plugin>
     </plugins>
