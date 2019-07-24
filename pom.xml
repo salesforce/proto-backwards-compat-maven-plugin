@@ -12,7 +12,7 @@
   <groupId>com.salesforce.servicelibs</groupId>
   <artifactId>proto-backwards-compatibility</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.0.5</version>
+  <version>1.0.6-SNAPSHOT</version>
 
   <name>Proto Backwards Compatibility Maven Mojo</name>
   <description>A Maven plugin for analyzing protobuf backwards compatible changes.</description>
