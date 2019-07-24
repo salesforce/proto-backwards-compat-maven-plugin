@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
@@ -97,9 +96,6 @@ public class BackwardsCompatibilityCheckMojo
     @Component
     protected ResolutionErrorHandler resolutionErrorHandler;
 
-    @Component
-    protected ArtifactFactory artifactFactory;
-
 
     /**
      * Execute the plugin.
@@ -121,12 +117,10 @@ public class BackwardsCompatibilityCheckMojo
 
         // Copy protolock executable locally if needed
         Path exeDirPath = Paths.get(project.getBuild().getDirectory(), "protolock-bin");
-        if (!Files.isDirectory(exeDirPath)) {
-            try {
-                Files.createDirectory(exeDirPath);
-            } catch (IOException e) {
-                throw new MojoExecutionException("Unable to create the protolock binary directory", e);
-            }
+        try {
+            Files.createDirectories(exeDirPath);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Unable to create the protolock binary directory", e);
         }
 
         String exeExtension = "";
