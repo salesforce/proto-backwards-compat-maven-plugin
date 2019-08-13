@@ -45,6 +45,8 @@ must be added to your project's pom.xml file in order for this plugin to work.
             <configuration>
                 <!-- Optional alternative protos location -->
                 <protoSourceRoot>src/main/proto</protoSourceRoot>
+                <!-- Optional alternative proto.lock location -->
+                <lockDir>src/main/proto</lockDir>
             </configuration>
             <executions>
                 <execution>
@@ -61,6 +63,7 @@ must be added to your project's pom.xml file in order for this plugin to work.
 ## Configuration
 
 * `<protoSourceRoot>` (`${basedir}/src/main/proto`) - The directory where proto sources can be found.
+* `<lockDir>` (defaults to root of proto files) - The directory where proto.lock will be kept.
 * `<options>` (empty) - Additional [command line options](https://github.com/nilslice/protolock#usage) to pass to protolock.
 
 ```xml
@@ -68,6 +71,7 @@ must be added to your project's pom.xml file in order for this plugin to work.
     <plugins>
         <protoSourceRoot>src/main/proto</protoSourceRoot>
         <options>--ignore=target/</options>
+        <lockDir>${project.basedir}</lockDir>
     </plugins>
 </configuration>
 ```

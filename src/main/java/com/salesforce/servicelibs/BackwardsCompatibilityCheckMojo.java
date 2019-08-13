@@ -61,6 +61,12 @@ public class BackwardsCompatibilityCheckMojo
     private String protoSourceRoot;
 
     /**
+     * The directory where proto.lock is kept
+     */
+    @Parameter
+    private String lockDir;
+
+    /**
      * A list of protolock plugins. May be empty.
      */
     @Parameter(property = "plugins", required = false)
@@ -189,15 +195,27 @@ public class BackwardsCompatibilityCheckMojo
                 options = "";
             }
 
-            Path lockFile = Paths.get(protoSourceRoot, "proto.lock");
+            // Build option for lock file location
+            String _lockDir = null;
+            String lockDirOption = "";
+
+            if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
+                lockDirOption = " --lockdir=" + lockDir;
+                _lockDir = lockDir;
+            } else {
+                _lockDir = protoSourceRoot;
+            }
+
+            Path lockFile = Paths.get(_lockDir,"proto.lock");
             if (!Files.exists(lockFile)) {
-                Runtime.getRuntime().exec(exePath + " init" + options, new String[]{pathEnv},
+                Runtime.getRuntime().exec(exePath + " init" + lockDirOption + options, new String[]{pathEnv},
                         new File(protoSourceRoot)).waitFor();
                 getLog().info("Initialized protolock.");
             } else {
                 Process protolock =
-                    Runtime.getRuntime().exec(exePath + " status" + pluginsOption + options, new String[]{pathEnv},
-                            new File(protoSourceRoot));
+                    Runtime.getRuntime()
+                            .exec(exePath + " status" + lockDirOption + pluginsOption + options,
+                                    new String[]{pathEnv},  new File(protoSourceRoot));
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolock.getInputStream()));
                 String s;
                 while ((s = stdInput.readLine()) != null) {
@@ -207,8 +225,8 @@ public class BackwardsCompatibilityCheckMojo
                 if (protolock.waitFor() != 0) {
                     throw new MojoFailureException("Backwards compatibility check failed!");
                 } else {
-                    Runtime.getRuntime().exec(exePath + " commit" + options, new String[]{pathEnv},
-                            new File(protoSourceRoot));
+                    Runtime.getRuntime().exec(exePath + " commit" + lockDirOption + options,
+                            new String[]{pathEnv}, new File(protoSourceRoot));
                     getLog().info("Backwards compatibility check passed.");
                 }
             }
