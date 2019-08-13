@@ -195,6 +195,11 @@ public class BackwardsCompatibilityCheckMojo
                 options = "";
             }
 
+            if (options.toUpperCase().contains("--LOCKDIR")) {
+                throw new MojoFailureException("lockDir location must be specified on the plugin and not as "
+                        + "an option passed to protolock command");
+            }
+
             // Build option for lock file location
             String _lockDir = null;
             String lockDirOption = "";
@@ -205,6 +210,7 @@ public class BackwardsCompatibilityCheckMojo
             } else {
                 _lockDir = protoSourceRoot;
             }
+
 
             Path lockFile = Paths.get(_lockDir,"proto.lock");
             if (!Files.exists(lockFile)) {
