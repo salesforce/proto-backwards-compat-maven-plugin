@@ -54,6 +54,7 @@ import org.apache.maven.shared.utils.io.FileUtils;
 public class BackwardsCompatibilityCheckMojo
     extends AbstractMojo {
 
+    public static final int RESULT_CODE_SUCCESS = 0;
     /**
      * The directory where .proto source files can be found.
      */
@@ -189,56 +190,89 @@ public class BackwardsCompatibilityCheckMojo
 
         // Run protolock
         try {
-            if (options != null && !StringUtils.isEmpty(options)) {
-                options = " " + options.trim();
-            } else {
-                options = "";
-            }
+            String lockDirOption = getLockDirOption();
+            String protolockAdditionalOptions = getAdditionalOptions();
 
-            if (options.toUpperCase().contains("--LOCKDIR")) {
-                throw new MojoFailureException("lockDir location must be specified on the plugin and not as "
-                        + "an option passed to protolock command");
-            }
-
-            // Build option for lock file location
-            String _lockDir = null;
-            String lockDirOption = "";
-
-            if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
-                lockDirOption = " --lockdir=" + lockDir;
-                _lockDir = lockDir;
-            } else {
-                _lockDir = protoSourceRoot;
-            }
-
-
-            Path lockFile = Paths.get(_lockDir,"proto.lock");
+            Path lockFile = getLockFile();
+            File protoRoot = new File(protoSourceRoot);
             if (!Files.exists(lockFile)) {
-                Runtime.getRuntime().exec(exePath + " init" + lockDirOption + options, new String[]{pathEnv},
-                        new File(protoSourceRoot)).waitFor();
-                getLog().info("Initialized protolock.");
-            } else {
-                Process protolock =
-                    Runtime.getRuntime()
-                            .exec(exePath + " status" + lockDirOption + pluginsOption + options,
-                                    new String[]{pathEnv},  new File(protoSourceRoot));
-                BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolock.getInputStream()));
-                String s;
-                while ((s = stdInput.readLine()) != null) {
-                    getLog().error(s);
-                }
-
-                if (protolock.waitFor() != 0) {
-                    throw new MojoFailureException("Backwards compatibility check failed!");
+                Process protolockProcess = executeProtolock(exePath, "init",
+                        pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                if (protolockProcess.waitFor() == RESULT_CODE_SUCCESS) {
+                    getLog().info("Initialized protolock.");
                 } else {
-                    Runtime.getRuntime().exec(exePath + " commit" + lockDirOption + options,
-                            new String[]{pathEnv}, new File(protoSourceRoot));
-                    getLog().info("Backwards compatibility check passed.");
+                    throw new MojoFailureException("Error initializing protolock. Check log for details");
+                }
+            } else {
+                Process protolockStatusProcess = executeProtolock(exePath, "status",
+                        pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                if (protolockStatusProcess.waitFor() == RESULT_CODE_SUCCESS) {
+                    Process protolockCommitProcess = executeProtolock(exePath, "commit",
+                            pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                    if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
+                        getLog().info("Backwards compatibility check passed.");
+                    } else {
+                        throw new MojoFailureException("Error committing new protolock changes. Check log for details");
+                    }
+                } else {
+                    throw new MojoFailureException("Backwards compatibility check failed!");
                 }
             }
         } catch (IOException | InterruptedException e) {
             throw new MojoExecutionException("An error occurred while running protolock", e);
         }
+    }
+
+    private String getLockDirOption() {
+        if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
+            return " --lockdir=" + lockDir;
+        } else {
+            return "";
+        }
+    }
+
+    private String getAdditionalOptions() throws MojoFailureException {
+        if (options != null && options.toUpperCase().contains("--LOCKDIR")) {
+            throw new MojoFailureException("lockDir location must be specified on the plugin and not as "
+                    + "an option passed to protolock command");
+        }
+
+        return (options == null ? "" : options);
+
+    }
+
+    private Process executeProtolock(Path exePath, String command, String pathEnv, String pluginsOption,
+                                     String lockDirOption, String otherOptions, File protoRoot) throws IOException {
+        String[] cmdLineParameters = new String[]{
+            exePath.toString(),
+            command,
+            lockDirOption,
+            pluginsOption,
+            otherOptions
+        };
+        Process protolockProcess =
+                Runtime.getRuntime().exec(cmdLineParameters, new String[]{pathEnv}, protoRoot);
+        BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolockProcess.getInputStream()));
+        String s;
+        while ((s = stdInput.readLine()) != null) {
+            getLog().info(s);
+        }
+        return protolockProcess;
+    }
+
+    /**
+     * Based on mojo configuration, find the location of the proto.lock file
+     * @return expected path of proto.lock
+     */
+    private Path getLockFile() {
+        String lockDirLocation;
+        if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
+            lockDirLocation = lockDir;
+        } else {
+            lockDirLocation = protoSourceRoot;
+        }
+        return Paths.get(lockDirLocation,"proto.lock");
+
     }
 
     /**
