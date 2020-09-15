@@ -23,7 +23,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
@@ -106,8 +105,9 @@ public class BackwardsCompatibilityCheckMojo
 
     /**
      * Execute the plugin.
+     *
      * @throws MojoExecutionException thrown when execution of protolock fails.
-     * @throws MojoFailureException thrown when compatibility check fails.
+     * @throws MojoFailureException   thrown when compatibility check fails.
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
         final String classifier = project.getProperties().getProperty("os.detected.classifier");
@@ -142,7 +142,7 @@ public class BackwardsCompatibilityCheckMojo
             try (InputStream in = this.getClass().getClassLoader().getResourceAsStream(protolockResourcePath)) {
                 if (in == null) {
                     throw new MojoExecutionException(
-                            "OS not supported. Unable to find a protolock binary for the classifier " + classifier);
+                        "OS not supported. Unable to find a protolock binary for the classifier " + classifier);
                 }
 
                 Files.copy(in, exePath);
@@ -190,14 +190,18 @@ public class BackwardsCompatibilityCheckMojo
 
         // Run protolock
         try {
-            String lockDirOption = getLockDirOption();
+
+            if (lockDir == null) {
+                lockDir = protoSourceRoot;
+            }
+
             String protolockAdditionalOptions = getAdditionalOptions();
 
-            Path lockFile = getLockFile();
+            Path lockFile = Paths.get(lockDir, "proto.lock");
             File protoRoot = new File(protoSourceRoot);
             if (!Files.exists(lockFile)) {
                 Process protolockProcess = executeProtolock(exePath, "init",
-                        pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                    pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
                 if (protolockProcess.waitFor() == RESULT_CODE_SUCCESS) {
                     getLog().info("Initialized protolock.");
                 } else {
@@ -205,10 +209,10 @@ public class BackwardsCompatibilityCheckMojo
                 }
             } else {
                 Process protolockStatusProcess = executeProtolock(exePath, "status",
-                        pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                    pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
                 if (protolockStatusProcess.waitFor() == RESULT_CODE_SUCCESS) {
                     Process protolockCommitProcess = executeProtolock(exePath, "commit",
-                            pathEnv, pluginsOption, lockDirOption, protolockAdditionalOptions, protoRoot);
+                        pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
                     if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
                         getLog().info("Backwards compatibility check passed.");
                     } else {
@@ -223,18 +227,10 @@ public class BackwardsCompatibilityCheckMojo
         }
     }
 
-    private String getLockDirOption() {
-        if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
-            return " --lockdir=" + lockDir;
-        } else {
-            return "";
-        }
-    }
-
     private String getAdditionalOptions() throws MojoFailureException {
         if (options != null && options.toUpperCase().contains("--LOCKDIR")) {
             throw new MojoFailureException("lockDir location must be specified on the plugin and not as "
-                    + "an option passed to protolock command");
+                + "an option passed to protolock command");
         }
 
         return (options == null ? "" : options);
@@ -242,37 +238,25 @@ public class BackwardsCompatibilityCheckMojo
     }
 
     private Process executeProtolock(Path exePath, String command, String pathEnv, String pluginsOption,
-                                     String lockDirOption, String otherOptions, File protoRoot) throws IOException {
-        String[] cmdLineParameters = new String[]{
+                                     String otherOptions, File protoRoot) throws IOException {
+        String[] cmdLineParameters = new String[] {
             exePath.toString(),
             command,
-            lockDirOption,
+            "--lockdir=" + lockDir,
+            "--protoroot=" + protoRoot.getAbsolutePath(),
             pluginsOption,
             otherOptions
         };
+        getLog().info("protolock cmd line: " + String.join(" ", cmdLineParameters));
+
         Process protolockProcess =
-                Runtime.getRuntime().exec(cmdLineParameters, new String[]{pathEnv}, protoRoot);
+            Runtime.getRuntime().exec(cmdLineParameters, new String[] {pathEnv}, project.getBasedir());
         BufferedReader stdInput = new BufferedReader(new InputStreamReader(protolockProcess.getInputStream()));
         String s;
         while ((s = stdInput.readLine()) != null) {
             getLog().info(s);
         }
         return protolockProcess;
-    }
-
-    /**
-     * Based on mojo configuration, find the location of the proto.lock file
-     * @return expected path of proto.lock
-     */
-    private Path getLockFile() {
-        String lockDirLocation;
-        if (lockDir != null || !StringUtils.isEmpty(lockDir)) {
-            lockDirLocation = lockDir;
-        } else {
-            lockDirLocation = protoSourceRoot;
-        }
-        return Paths.get(lockDirLocation,"proto.lock");
-
     }
 
     /**
@@ -286,9 +270,9 @@ public class BackwardsCompatibilityCheckMojo
         final String[] parts = artifactSpec.split(":");
         if (parts.length < 3 || parts.length > 5) {
             throw new MojoExecutionException(
-                    "Invalid artifact specification format"
-                            + ", expected: groupId:artifactId:version[:type[:classifier]]"
-                            + ", actual: " + artifactSpec);
+                "Invalid artifact specification format"
+                    + ", expected: groupId:artifactId:version[:type[:classifier]]"
+                    + ", actual: " + artifactSpec);
         }
         final String type = parts.length >= 4 ? parts[3] : "exe";
         final String classifier = parts.length == 5 ? parts[4] : null;
@@ -310,6 +294,7 @@ public class BackwardsCompatibilityCheckMojo
 
     /**
      * Downloads a binary artifact and installs it in the protolock plugin directory.
+     *
      * @param artifact the artifact to download.
      * @return a handle to the downloaded file.
      */
@@ -317,18 +302,18 @@ public class BackwardsCompatibilityCheckMojo
         final ArtifactResolutionResult result;
         try {
             final ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                    .setArtifact(project.getArtifact())
-                    .setResolveRoot(false)
-                    .setResolveTransitively(false)
-                    .setArtifactDependencies(singleton(artifact))
-                    .setManagedVersionMap(emptyMap())
-                    .setLocalRepository(localRepository)
-                    .setRemoteRepositories(remoteRepositories)
-                    .setOffline(session.isOffline())
-                    .setForceUpdate(session.getRequest().isUpdateSnapshots())
-                    .setServers(session.getRequest().getServers())
-                    .setMirrors(session.getRequest().getMirrors())
-                    .setProxies(session.getRequest().getProxies());
+                .setArtifact(project.getArtifact())
+                .setResolveRoot(false)
+                .setResolveTransitively(false)
+                .setArtifactDependencies(singleton(artifact))
+                .setManagedVersionMap(emptyMap())
+                .setLocalRepository(localRepository)
+                .setRemoteRepositories(remoteRepositories)
+                .setOffline(session.isOffline())
+                .setForceUpdate(session.getRequest().isUpdateSnapshots())
+                .setServers(session.getRequest().getServers())
+                .setMirrors(session.getRequest().getMirrors())
+                .setProxies(session.getRequest().getProxies());
 
             result = repositorySystem.resolve(request);
 
