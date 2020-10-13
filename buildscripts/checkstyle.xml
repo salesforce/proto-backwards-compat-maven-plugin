@@ -30,6 +30,12 @@
     <module name="Header">
         <property name="headerFile" value="buildscripts/checkstyle-header.txt"/>
     </module>
+          
+    <module name="LineLength">
+        <!-- Prefer Github's max line length of ~120 -->
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module>
 
     <module name="TreeWalker">
         <module name="OuterTypeFilename"/>
@@ -42,12 +48,6 @@
             <property name="allowEscapesForControlCharacters" value="true"/>
             <property name="allowByTailComment" value="true"/>
             <property name="allowNonPrintableEscapes" value="true"/>
-        </module>
-        <module name="LineLength">
-            <!-- Prefer Github's max line length of ~120
-            <property name="max" value="100"/>-->
-            <property name="max" value="120"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
         </module>
         <module name="AvoidStarImport"/>
         <module name="UnusedImports"/>
@@ -229,13 +229,8 @@
         <module name="JavadocMethod">
             <property name="scope" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
-            <property name="allowMissingThrowsTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
-            <property name="minLineCount" value="2"/>
-            <!-- Too restrictive for tests
-            <property name="allowedAnnotations" value="Override, Test"/>-->
             <property name="allowedAnnotations" value="Override, Test, Before, After, BeforeClass, AfterClass, Setup, TearDown"/>
-            <property name="allowThrowsTagsForSubclasses" value="true"/>
         </module>
         <module name="MethodName">
             <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
