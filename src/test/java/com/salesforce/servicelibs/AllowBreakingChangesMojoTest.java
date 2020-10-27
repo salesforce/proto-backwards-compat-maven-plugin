@@ -22,7 +22,7 @@ import org.junit.Test;
 /**
  * Tests the backwards compatibility check mojo.
  */
-public class BasicMojoTest
+public class AllowBreakingChangesMojoTest
     extends BetterAbstractMojoTestCase {
 
     final String testDir = "/src/test/resources/unit/";
@@ -57,71 +57,16 @@ public class BasicMojoTest
     }
 
     /**
-     * Tests that protolock is properly initialized.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testProtolockInit()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        checkLockFileExists();
-        checkExecutableExists();
-    }
-
-    /**
-     * Tests that backwards compatibility check fails when breaking change is made.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldFailCompatibilityCheckBreakingChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        writeTestFile("bad.proto");
-        runMojo(true);
-    }
-
-    /**
-     * Tests that backwards compatibility check fails when .proto file is deleted.
+     * Tests that backwards compatibility check fails but still is accepted due to allowBreakingChanges=true.
      *
      * @throws Exception if any.
      */
     @Test
-    public void testShouldFailCompatibilityCheckProtoFileDeleted()
+    public void testShouldPassCompatibilityCheckEvenIfBreakingChange()
         throws Exception {
         writeTestFile("init.proto");
-        myMojo.execute();
-        File testFile = getTestFile(testDir + "proto/test.proto");
-        testFile.delete();
-        runMojo(true);
-    }
-
-    /**
-     * Tests that backwards compatibility check passes when breaking change is forced.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldPassCompatibilityCheckForceChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
+        myMojo.execute(); // Init proto.lock
         writeTestFile("bad.proto");
-        File lockFile = getTestFile(testDir + "proto/proto.lock");
-        lockFile.delete();
-        runMojo(false);
-    }
-
-    /**
-     * Tests that backwards compatibility check passes when non-breaking change is made.
-     * @throws Exception if any.
-     */
-    @Test
-    public void testShouldPassCompatibilityCheckNonBreakingChange()
-        throws Exception {
-        writeTestFile("init.proto");
-        myMojo.execute();
-        writeTestFile("good.proto");
         runMojo(false);
     }
 
@@ -130,7 +75,7 @@ public class BasicMojoTest
      */
     private void setupMojo()
         throws Exception {
-        File pom = getTestFile(testDir + "project-to-test/pom.xml");
+        File pom = getTestFile(testDir + "project-to-test/pom-allowbreakingchanges.xml");
         assertNotNull(pom);
         assertTrue(pom.exists());
         myMojo = (BackwardsCompatibilityCheckMojo) lookupConfiguredMojo(pom, "backwards-compatibility-check");
@@ -189,36 +134,11 @@ public class BasicMojoTest
             }
         } catch (MojoFailureException ex) {
             if (shouldFail) {
-                assertEquals(
-                    "Backwards compatibility check failed! "
-                        + "You can override this by specifying allowBreakingChanges=true",
-                    ex.getMessage());
+                assertEquals("Backwards compatibility check failed!", ex.getMessage());
             } else {
                 fail();
             }
         }
     }
 
-    /**
-     * Check that the proto.lock file exists.
-     */
-    private void checkLockFileExists() {
-        File lockFile = getTestFile(testDir + "proto/proto.lock");
-        assertTrue(lockFile.exists());
-    }
-
-    /**
-     * Check that the protolock executable exists.
-     */
-    private void checkExecutableExists() {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        String protolockExtension = "";
-        if (os.contains("windows")) {
-            protolockExtension = ".exe";
-        }
-
-        File exeFile = getTestFile(testDir + "protolock-bin/protolock" + protolockExtension);
-        assertTrue(exeFile.exists());
-    }
 }

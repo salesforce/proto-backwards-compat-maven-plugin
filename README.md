@@ -15,8 +15,10 @@ track of the state of the .proto files. This file is updated when a non-breaking
 is made, and should be checked in along with any other changes.
 
 It is also possible to force any breaking changes and reset the current state
-by deleting the proto.lock file. It will then reinitialize the next time the
+by either 
+* deleting the proto.lock file. It will then reinitialize the next time the
 plugin is run.
+* or by specifying parameter property `acceptBreakingChanges` (`-DacceptBreakingChanges=true`)
 
 #### Maintaining Backwards Compatibility
 In order to maintain backwards compatibility for your set of .proto files, a few

@@ -1,0 +1,37 @@
+<!--
+  ~  Copyright (c) 2018, salesforce.com, inc.
+  ~  All rights reserved.
+  ~  Licensed under the BSD 3-Clause license.
+  ~  For full license text, see LICENSE.txt file in the repo root  or https://opensource.org/licenses/BSD-3-Clause
+  -->
+
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.salesforce.servicelibs.unit</groupId>
+    <artifactId>project-to-test</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Test Backwards Compatibility Mojo</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.salesforce.servicelibs</groupId>
+                <artifactId>proto-backwards-compatibility</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <configuration>
+                    <!-- Optional alternative protos location -->
+                    <protoSourceRoot>src/test/resources/unit/proto</protoSourceRoot>
+                    <allowBreakingChanges>true</allowBreakingChanges>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>backwards-compatibility-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
