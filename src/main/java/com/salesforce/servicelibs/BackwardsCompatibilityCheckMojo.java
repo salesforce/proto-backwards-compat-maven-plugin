@@ -45,13 +45,9 @@ import org.apache.maven.shared.utils.Os;
 import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.shared.utils.io.FileUtils;
 
-@Mojo(
-    name = "backwards-compatibility-check",
-    defaultPhase = LifecyclePhase.VERIFY,
-    requiresDependencyResolution = ResolutionScope.COMPILE,
-    threadSafe = true)
-public class BackwardsCompatibilityCheckMojo
-    extends AbstractMojo {
+@Mojo(name = "backwards-compatibility-check", defaultPhase = LifecyclePhase.VERIFY,
+    requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
+public class BackwardsCompatibilityCheckMojo extends AbstractMojo {
 
     public static final int RESULT_CODE_SUCCESS = 0;
     /**
@@ -65,6 +61,12 @@ public class BackwardsCompatibilityCheckMojo
      */
     @Parameter
     private String lockDir;
+
+    /**
+     * Accept any breaking changes reported. This is effectively the same as deleting the proto.lock file
+     */
+    @Parameter(property = "allowBreakingChanges", defaultValue = "false")
+    private boolean allowBreakingChanges;
 
     /**
      * A list of protolock plugins. May be empty.
@@ -101,7 +103,6 @@ public class BackwardsCompatibilityCheckMojo
 
     @Component
     protected ResolutionErrorHandler resolutionErrorHandler;
-
 
     /**
      * Execute the plugin.
@@ -187,7 +188,6 @@ public class BackwardsCompatibilityCheckMojo
             pluginsOption = " --plugins=" + StringUtils.join(pluginFileNames.toArray(), ",");
         }
 
-
         // Run protolock
         try {
 
@@ -216,10 +216,27 @@ public class BackwardsCompatibilityCheckMojo
                     if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
                         getLog().info("Backwards compatibility check passed.");
                     } else {
-                        throw new MojoFailureException("Error committing new protolock changes. Check log for details");
+                        throw new MojoFailureException(
+                            "Error committing new protolock changes. Check log for details");
                     }
                 } else {
-                    throw new MojoFailureException("Backwards compatibility check failed!");
+                    if (allowBreakingChanges) {
+                        protolockAdditionalOptions += " --force=true";
+                        Process protolockCommitProcess =
+                            executeProtolock(exePath, "commit", pathEnv, pluginsOption,
+                                protolockAdditionalOptions,
+                                protoRoot);
+                        if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
+                            getLog().warn("Breaking changes accepted");
+                        } else {
+                            throw new MojoFailureException(
+                                "Error committing new protolock changes. Check log for details");
+                        }
+                    } else {
+                        throw new MojoFailureException(
+                            "Backwards compatibility check failed! "
+                                + "You can override this by specifying allowBreakingChanges=true");
+                    }
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -239,14 +256,26 @@ public class BackwardsCompatibilityCheckMojo
 
     private Process executeProtolock(Path exePath, String command, String pathEnv, String pluginsOption,
                                      String otherOptions, File protoRoot) throws IOException {
-        String[] cmdLineParameters = new String[] {
-            exePath.toString(),
-            command,
-            "--lockdir=" + lockDir,
-            "--protoroot=" + protoRoot.getAbsolutePath(),
-            pluginsOption,
-            otherOptions
-        };
+
+        List<String> cmdLineParametersList = new ArrayList<>();
+        cmdLineParametersList.add(StringUtils.trim(exePath.toString()));
+        cmdLineParametersList.add(StringUtils.trim(command));
+        cmdLineParametersList.add("--lockdir=" + lockDir);
+        cmdLineParametersList.add("--protoroot=" + protoRoot.getAbsolutePath());
+        if (!StringUtils.trim(pluginsOption).isEmpty()) {
+            String[] separateArguments = StringUtils.split(StringUtils.trim(pluginsOption), " ");
+            for (String arg : separateArguments) {
+                cmdLineParametersList.add(arg);
+            }
+        }
+        if (!StringUtils.trim(otherOptions).isEmpty()) {
+            String[] separateArguments = StringUtils.split(StringUtils.trim(otherOptions), " ");
+            for (String arg : separateArguments) {
+                cmdLineParametersList.add(arg);
+            }
+        }
+
+        String[] cmdLineParameters = cmdLineParametersList.toArray(new String[0]);
         getLog().info("protolock cmd line: " + String.join(" ", cmdLineParameters));
 
         Process protolockProcess =
