@@ -4,7 +4,7 @@ Protolock Version: [20210218T172155Z](https://github.com/nilslice/protolock/rele
 
 # Protobuf Backwards Compatibility Check Maven Plugin
 
-The <code>proto-backwards-compatibility</code> plugin is a Maven plugin to
+The `proto-backwards-compatibility` plugin is a Maven plugin to
 run a backwards compatibility check on a set of protobuf IDL files. The plugin
 can be integrated into various phases of a maven build to check that any changes to
 a set of .proto files are backwards compatible. This ensures that these changes do
@@ -14,7 +14,8 @@ track of the state of the .proto files. This file is updated when a non-breaking
 is made, and should be checked in along with any other changes.
 
 It is also possible to force any breaking changes and reset the current state
-by either 
+by either
+
 * deleting the proto.lock file. It will then reinitialize the next time the
 plugin is run.
 * or by specifying parameter property `acceptBreakingChanges` (`-DacceptBreakingChanges=true`)
@@ -26,7 +27,7 @@ https://developers.google.com/protocol-buffers/docs/proto#backwards-compatibilit
 
 ## Usage
 
-The <code>os-maven-plugin</code> extension (https://github.com/trustin/os-maven-plugin) 
+The `os-maven-plugin` extension (https://github.com/trustin/os-maven-plugin) 
 must be added to your project's pom.xml file in order for this plugin to work.
 
 ```xml
