@@ -111,11 +111,14 @@ public class BackwardsCompatibilityCheckMojo extends AbstractMojo {
      * @throws MojoFailureException   thrown when compatibility check fails.
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final String classifier = project.getProperties().getProperty("os.detected.classifier");
-        if (classifier == null) {
+        final String name = project.getProperties().getProperty("os.detected.name");
+        final String arch = project.getProperties().getProperty("os.detected.arch");
+        if (name == null || arch == null) {
             getLog().error("Add os-maven-plugin to your POM. https://github.com/trustin/os-maven-plugin");
             throw new MojoExecutionException("Unable to detect OS type.");
         }
+
+        final String classifier = name + "-" + arch;
 
         try {
             protolockPluginDirectory = protolockPluginDirectory.getCanonicalFile();
