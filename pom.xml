@@ -65,7 +65,7 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>3.8.4</version>
+      <version>${maven.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -105,9 +105,10 @@
       <version>3.3.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-resolver-provider -->
     <dependency>
       <groupId>org.apache.maven</groupId>
-      <artifactId>maven-aether-provider</artifactId>
+      <artifactId>maven-resolver-provider</artifactId>
       <version>${maven.version}</version>
       <scope>test</scope>
     </dependency>
@@ -120,7 +121,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>
-      <version>3.1.0</version>
+      <version>3.2.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -128,6 +129,11 @@
       <artifactId>maven-model</artifactId>
       <version>${maven.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.13</version>
     </dependency>
   </dependencies>
 
