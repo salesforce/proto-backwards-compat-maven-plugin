@@ -211,13 +211,15 @@ public class BackwardsCompatibilityCheckMojo extends AbstractMojo {
                 Process protolockStatusProcess = executeProtolock(exePath, "status",
                     pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
                 if (protolockStatusProcess.waitFor() == RESULT_CODE_SUCCESS) {
-                    Process protolockCommitProcess = executeProtolock(exePath, "commit",
-                        pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
-                    if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
-                        getLog().info("Backwards compatibility check passed.");
-                    } else {
-                        throw new MojoFailureException(
-                            "Error committing new protolock changes. Check log for details");
+                    if (Files.isWritable(lockFile)) {
+                        Process protolockCommitProcess = executeProtolock(exePath, "commit",
+                                pathEnv, pluginsOption, protolockAdditionalOptions, protoRoot);
+                        if (protolockCommitProcess.waitFor() == RESULT_CODE_SUCCESS) {
+                            getLog().info("Backwards compatibility check passed.");
+                        } else {
+                            throw new MojoFailureException(
+                                    "Error committing new protolock changes. Check log for details");
+                        }
                     }
                 } else {
                     if (allowBreakingChanges) {
