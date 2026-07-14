@@ -17,6 +17,8 @@ import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequestPopulator;
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
+import org.apache.maven.model.Model;
 import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
@@ -32,6 +34,8 @@ import org.eclipse.aether.repository.LocalRepository;
  * @author ahgittin (https://github.com/ahgittin/license-audit-maven-plugin)
  */
 public abstract class BetterAbstractMojoTestCase extends AbstractMojoTestCase {
+
+    final String testDir = "/src/test/resources/unit/";
 
     protected MavenSession newMavenSession() {
         try {
@@ -97,4 +101,29 @@ public abstract class BetterAbstractMojoTestCase extends AbstractMojoTestCase {
         return lookupConfiguredMojo(project, goal);
     }
 
+
+    protected Model getModel() {
+        Model m = new Model();
+        String name = System.getProperty("os.name").toLowerCase();
+        String arch;
+        if ((name.contains("mac"))) {
+            name = "osx-x86_64";
+            arch = "x86_64";
+        } else if (name.contains("nux")) {
+            name = "linux";
+            arch = "x86_64";
+        } else if (name.contains("windows")) {
+            name = "windows";
+            arch = "x86_64";
+        } else {
+            arch = "";
+        }
+
+        m.addProperty("os.detected.name", name);
+        m.addProperty("os.detected.arch", arch);
+        Build b = new Build();
+        b.setDirectory(System.getProperty("user.dir") + testDir);
+        m.setBuild(b);
+        return m;
+    }
 }

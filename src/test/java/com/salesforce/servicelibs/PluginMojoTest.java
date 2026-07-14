@@ -12,8 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
@@ -28,7 +26,6 @@ import org.junit.Test;
 public class PluginMojoTest
     extends BetterAbstractMojoTestCase {
 
-    final String testDir = "/src/test/resources/unit/";
     BackwardsCompatibilityCheckMojo myMojo;
 
     /**
@@ -84,21 +81,7 @@ public class PluginMojoTest
         myMojo = (BackwardsCompatibilityCheckMojo) lookupConfiguredMojo(pom, "backwards-compatibility-check");
         assertNotNull(myMojo);
 
-        String classifier = System.getProperty("os.name").toLowerCase();
-        if ((classifier.contains("mac"))) {
-            classifier = "osx-x86_64";
-        } else if (classifier.contains("nux")) {
-            classifier = "linux-x86_64";
-        } else if (classifier.contains("windows")) {
-            classifier = "windows-x86_64";
-        }
-
-        Model m = new Model();
-        m.addProperty("os.detected.classifier", classifier);
-        Build b = new Build();
-        b.setDirectory(System.getProperty("user.dir") + testDir);
-        m.setBuild(b);
-        myMojo.project = new MavenProject(m);
+        myMojo.project = new MavenProject(getModel());
         myMojo.project.setArtifact(myMojo.repositorySystem.createArtifact("com.salesforce.servicelibs.unit",
                 "project-to-test", "1.0-SNAPSHOT", "pom"));
 

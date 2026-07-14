@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -80,20 +79,7 @@ public class AllowBreakingChangesMojoTest
         assertTrue(pom.exists());
         myMojo = (BackwardsCompatibilityCheckMojo) lookupConfiguredMojo(pom, "backwards-compatibility-check");
         assertNotNull(myMojo);
-        Model m = new Model();
-        String classifier = System.getProperty("os.name").toLowerCase();
-        if ((classifier.contains("mac"))) {
-            classifier = "osx-x86_64";
-        } else if (classifier.contains("nux")) {
-            classifier = "linux-x86_64";
-        } else if (classifier.contains("windows")) {
-            classifier = "windows-x86_64";
-        }
-
-        m.addProperty("os.detected.classifier", classifier);
-        Build b = new Build();
-        b.setDirectory(System.getProperty("user.dir") + testDir);
-        m.setBuild(b);
+        Model m = getModel();
         myMojo.project = new MavenProject(m);
     }
 
